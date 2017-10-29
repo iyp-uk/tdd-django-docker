@@ -66,8 +66,20 @@ class PollsView(TestCase):
             self.assertNotContains(response, escape(question), html=True)
 
     def test_question_details(self):
-        response = self.client.get('/polls/5/')
-        self.assertEqual(response.status_code, 200)
+        q = add_question()
+        q.choice_set.create(choice_text='Not much', votes=0)
+        q.choice_set.create(choice_text='The sky', votes=0)
+        response = self.client.get(f'/polls/{q.id}/')
+        title = '<h1>%s</h1>' % escape(q.question_text)
+        self.assertContains(response, title, html=True)
+        self.assertContains(response, "Not much", html=True)
+        self.assertContains(response, "The sky", html=True)
+        self.assertTemplateUsed(response, 'polls/detail.html')
+
+    def test_question_details_does_not_exist(self):
+        q = add_question()
+        response = self.client.get(f'/polls/{q.id + 1}/')
+        self.assertEqual(response.status_code, 404)
 
     def test_question_results_details(self):
         response = self.client.get('/polls/5/results/')
